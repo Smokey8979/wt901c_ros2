@@ -53,8 +53,8 @@ pip3 install pyserial
 ### Clone and install the package
 ```bash
 cd ~/ros2_ws/src
-git clone https://github.com/Smokey8979/WT901C_ros2.git
-cd wt901c_imu
+git clone https://github.com/Smokey8979/wt901c_ros2.git
+cd wt901c_ros2
 chmod +x install.sh
 ./install.sh
 sudo reboot
