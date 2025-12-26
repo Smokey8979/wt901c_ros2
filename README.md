@@ -1,15 +1,24 @@
-This is a ROS2 package for setting up and using WT901C485 RS-485type modbus mode imu module
+# WT901C485 ROS 2 Driver (RS-485 Modbus IMU)
 
-This package provides a **plug-and-play ROS 2 node** that polls the WT901C485 IMU over RS-485 and publishes standard ROS sensor messages, making it suitable for **robot_localization**, **Nav2**, and general robotics applications.
+This repository contains a **ROS 2 package for setting up and using the WT901C485 RS-485 IMU in Modbus mode**.
+
+The package provides **plug-and-play ROS 2 nodes** that poll the WT901C485 IMU over **RS-485 (Modbus RTU)** and publish **standard ROS sensor messages**, making it suitable for:
+
+- robot_localization
+- Nav2
+- General mobile robotics, mapping, and localization applications
+
+This driver follows the **industrial-correct Modbus polling model** required by the WT901C485 (no UART streaming).
 
 ---
 
 ## 🔌 Hardware Setup
 
-### Required
-- WT901C485 IMU
-- USB → RS-485 converter (CH340 / FTDI, auto-direction)
-- External **5V power supply** for IMU
+### Required Hardware
+- WT901C485 IMU (RS-485 variant)
+- USB → RS-485 converter  
+  (CH340 / FTDI based, auto-direction recommended)
+- External **5V power supply** for the IMU
 
 ### Wiring
 
@@ -20,93 +29,143 @@ This package provides a **plug-and-play ROS 2 node** that polls the WT901C485 IM
 | GND | GND |
 | VCC | External 5V |
 
-⚠️ **Do NOT power the IMU from TTL VCC pins** on converters.  
-⚠️ **Do NOT use UART/TTL mode** for this IMU variant.
+⚠️ **Do NOT power the IMU from TTL VCC pins on the converter**  
+⚠️ **Do NOT use UART / TTL mode — this IMU works only in RS-485 Modbus mode**
 
+---
 
 ## 🖥️ Software Requirements
 
 - Ubuntu 22.04
 - ROS 2 Humble
 - Python ≥ 3.10
-- `pyserial`
+- pyserial
 
-Install dependency:
+Install the Python dependency:
 ```bash
 pip3 install pyserial
+```
 
 ---
 
-*** INSTALLATION AND RUNNING ***
-  --setting up and cloning the package--
-  cd ros2_ws/src
-  git clone https://github.com/<your-username>/wt901c_imu.git
-  cd wt901c_imu
-  chmod +x install.sh
-  ./install.sh
-  sudo reboot
+## 📦 Installation & Setup
 
-  --Running the package--
-  cd ros2_ws
-  colcon build --packages-select wt901c_imu
-  source install/setup.bash
+### Clone and install the package
+```bash
+cd ~/ros2_ws/src
+git clone https://github.com/<your-username>/wt901c_imu.git
+cd wt901c_imu
+chmod +x install.sh
+./install.sh
+sudo reboot
+```
 
+### What the install script does
+- Installs required system packages
+- Installs USB–RS485 kernel modules (CH340 support)
+- Removes conflicting services (brltty)
+- Adds udev rules for stable device naming
+- Adds the user to the dialout group
 
-  NOTE: run wit_basic_imu_node for only basic imu 
-        run wit_imu_node_mag_tem for imu, magnitude and temperature values  
-        run full_imu_node for imu, magnitude, temperature and presure values
+---
 
-        TEMPERATURE READINGS AND DATA ARE NOT AVAILABLE RIGHT NOW !!!
+## 🔨 Build the Package
 
+```bash
+cd ~/ros2_ws
+colcon build --packages-select wt901c_imu
+source install/setup.bash
+```
 
-  ** To run basic only imu **
+---
 
-  ros2 run wt901c_imu wit_basic_imu_node \
-    --ros-args \
-    -p port:=/dev/ttyUSB0 \
-    -p frame_id:=imu_link
+## 🚀 Running the Nodes
 
+> ⚠️ **IMPORTANT NOTE**  
+> Temperature readings are currently **NOT available** and will be supported in a future update.
 
-  ** To run with mag and temp **
+### 1️⃣ Basic IMU Only
+(Accelerometer + Gyroscope + Orientation)
 
-  ros2 run wt901c_imu wit_imu_node_mag_tem \
-    --ros-args -p port:=/dev/ttyUSB0 -p frame_id:=imu_link -p rate:=20.0
+```bash
+ros2 run wt901c_imu wit_basic_imu_node \
+  --ros-args \
+  -p port:=/dev/ttyUSB0 \
+  -p frame_id:=imu_link
+```
 
+---
 
-  ** To run with all **
+### 2️⃣ IMU + Magnetometer
+(Temperature placeholder – not working yet)
 
-  ros2 run wt901c_imu full_imu_node  \
-    --ros-args \
-    -p port:=/dev/ttyUSB0 \    
-    -p rate:=20.0 \
-    -p mag_reg:=61 \
-    -p baro_reg:=63
+```bash
+ros2 run wt901c_imu wit_imu_node_mag_tem \
+  --ros-args \
+  -p port:=/dev/ttyUSB0 \
+  -p frame_id:=imu_link \
+  -p rate:=20.0
+```
 
+---
 
-## 📦 Published Topics
+### 3️⃣ Full IMU
+(IMU + Magnetometer + Barometer)
+
+```bash
+ros2 run wt901c_imu full_imu_node \
+  --ros-args \
+  -p port:=/dev/ttyUSB0 \
+  -p rate:=20.0 \
+  -p mag_reg:=61 \
+  -p baro_reg:=63
+```
+
+---
+
+## 📡 Published Topics
 
 | Topic | Message Type | Description |
 |------|-------------|------------|
-| `/imu/data` | `sensor_msgs/Imu` | Accel, gyro, orientation |
-| `/imu/mag` | `sensor_msgs/MagneticField` | Magnetometer (optional) |
-| `/imu/temperature` | `sensor_msgs/Temperature` | Temperature (optional) |   !!! This is currently not working !!!
-| `/imu/pressure` | `sensor_msgs/FluidPressure` | Barometric pressure (optional) |
----
+| /imu/data | sensor_msgs/Imu | Accelerometer, Gyroscope, Orientation |
+| /imu/mag | sensor_msgs/MagneticField | Magnetometer (optional) |
+| /imu/temperature | sensor_msgs/Temperature | Temperature (currently not working) |
+| /imu/pressure | sensor_msgs/FluidPressure | Barometric pressure (optional) |
 
+---
 
 ## ✨ Features
 
-- ✅ RS-485 **Modbus RTU polling** (industrial-correct, reliable)
-- ✅ Accelerometer
-- ✅ Gyroscope
-- ✅ Orientation (Euler → Quaternion)
-- ✅ Magnetometer
-- ✅ Temperature (optional)
-- ✅ Barometer / Pressure (optional)
-- ✅ ROS-standard messages
-- ✅ Parameter-driven (portable across devices)
-- ✅ Works on **any ROS 2 Humble system**
+- RS-485 Modbus RTU polling (industrial-grade & reliable)
+- Accelerometer
+- Gyroscope
+- Orientation (Euler → Quaternion)
+- Magnetometer
+- Barometer / Pressure
+- ROS-standard message types
+- Parameter-driven configuration
+- Compatible with robot_localization and Nav2
+- Works on any ROS 2 Humble system
 
 ---
 
-FOR HELP WRITE TO : sdhudu@gmail.com
+## 📌 Important Notes
+
+- WT901C485 does NOT support continuous UART streaming
+- This driver correctly uses poll-based Modbus communication
+- Register addresses may vary by firmware
+- USB–RS485 adapters must support automatic TX/RX direction control
+
+---
+
+## 🆘 Support
+
+For help, questions, or issues:
+
+sdhudu@gmail.com
+
+---
+
+## 📄 License
+
+MIT License
