@@ -24,9 +24,10 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'wit_imu_node_mag_tem = wt901c_imu.imu_node:main',
+            'wit_imu_node_mag = wt901c_imu.imu_node:main',
 	        'wit_basic_imu_node = wt901c_imu.basic_imu_node:main',
-            'full_imu_node = wt901c_imu.full_imu_node:main',
+            'test_imu_node = wt901c_imu.full_imu_node:main',
+            'wit_imu_node = wt901c_imu.wit_full:main',
         ],
     },
 )

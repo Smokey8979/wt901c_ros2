@@ -100,7 +100,7 @@ ros2 run wt901c_imu wit_basic_imu_node \
 (Temperature placeholder – not working yet)
 
 ```bash
-ros2 run wt901c_imu wit_imu_node_mag_tem \
+ros2 run wt901c_imu wit_imu_node_mag \
   --ros-args \
   -p port:=/dev/ttyUSB0 \
   -p frame_id:=imu_link \
@@ -109,16 +109,25 @@ ros2 run wt901c_imu wit_imu_node_mag_tem \
 
 ---
 
-### 3️⃣ Full IMU
+### 3️⃣ Test IMU
 (IMU + Magnetometer + Barometer)
 
 ```bash
-ros2 run wt901c_imu full_imu_node \
+ros2 run wt901c_imu test_imu_node \
   --ros-args \
   -p port:=/dev/ttyUSB0 \
   -p rate:=20.0 \
   -p mag_reg:=61 \
   -p baro_reg:=63
+```
+
+---
+
+### 4️⃣ Full IMU
+(All)
+
+```bash
+ros2 run wt901c_imu wit_imu_node 
 ```
 
 ---
