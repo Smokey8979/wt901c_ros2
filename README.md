@@ -141,8 +141,9 @@ ros2 run wt901c_imu wit_imu_node
 |------|-------------|------------|
 | /imu/data | sensor_msgs/Imu | Accelerometer, Gyroscope, Orientation |
 | /imu/mag | sensor_msgs/MagneticField | Magnetometer (optional) |
-| /imu/temperature | sensor_msgs/Temperature | Temperature (currently not working) |
+| /imu/temperature | sensor_msgs/Temperature | Temperature (optional) |
 | /imu/pressure | sensor_msgs/FluidPressure | Barometric pressure (optional) |
+| /imu/altitude | std_msgs/Float64 (derived from pressure) | Altitude (Currently Inaccurate) |
 
 ---
 
