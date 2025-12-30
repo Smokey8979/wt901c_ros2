@@ -36,17 +36,11 @@ This driver follows the **industrial-correct Modbus polling model** required by 
 
 ## 🖥️ Software Requirements
 
-- Ubuntu 22.04
-- ROS 2 Humble
+- Ubuntu 22.04 or Ubuntu 24
+- ROS 2 Humble or Jazzy
 - Python ≥ 3.10
 - pyserial
 
-Install the Python dependency:
-```bash
-pip3 install pyserial
-```
-
----
 
 ## 📦 Installation & Setup
 
@@ -66,6 +60,7 @@ sudo reboot
 - Removes conflicting services (brltty)
 - Adds udev rules for stable device naming
 - Adds the user to the dialout group
+- Installs imu plugin for rviz2
 
 ---
 
@@ -132,8 +127,29 @@ ros2 run wt901c_imu test_imu_node \
 ```bash
 ros2 run wt901c_imu wit_imu_node 
 ```
+## Checking
+```bash
+ros2 topic list 
+```
+In another terminal set frame to imu_link then add the topics and all to visualize.
+```bash 
+rviz2
+```
+
 
 ---
+
+## Debug
+
+### Scan the registors via connecting the imu 
+> ⚠️ **IMPORTANT NOTE**  
+> This is for debugging if you dont get data on the topics, then try to check the registors and then change in the code accordingly.
+```bash
+cd ~/ros2_ws/src/wt901c_ros2/
+chmod +x check_reg.py
+python3 check_reg.py 
+```
+
 
 ## 📡 Published Topics
 
@@ -158,7 +174,8 @@ ros2 run wt901c_imu wit_imu_node
 - ROS-standard message types
 - Parameter-driven configuration
 - Compatible with robot_localization and Nav2
-- Works on any ROS 2 Humble system
+- Works on any ROS 2 Humble/Jazzy system
+- Can further integrate it with EKF along with other datas for better odom or position
 
 ---
 

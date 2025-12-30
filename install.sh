@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 # ============================================================
-# WT901C485 ROS 2 Driver - Dependency Installer
-# Target OS : Ubuntu 22.04
-# Target ROS: ROS 2 Humble
+# WT901C485 ROS 2 Driver - Universal Dependency Installer
+# Supported OS : Ubuntu 22.04, Ubuntu 24.04
+# Supported ROS: Humble, Jazzy
 # ============================================================
 
 set -e
@@ -13,25 +13,34 @@ echo " WT901C485 ROS 2 Driver - Dependency Installer "
 echo "=============================================="
 
 # ------------------------------
-# 1. Check OS
+# 1. Detect Ubuntu version
 # ------------------------------
-if ! grep -q "Ubuntu 22.04" /etc/os-release; then
-  echo "[ERROR] This script is intended for Ubuntu 22.04 only."
+source /etc/os-release
+
+if [[ "$VERSION_ID" != "22.04" && "$VERSION_ID" != "24.04" ]]; then
+  echo "[ERROR] Unsupported Ubuntu version: $VERSION_ID"
+  echo "Supported versions: Ubuntu 22.04, Ubuntu 24.04"
   exit 1
 fi
 
+echo "[OK] Ubuntu $VERSION_ID detected"
+
 # ------------------------------
-# 2. Check ROS 2 Humble
+# 2. Detect ROS 2 distribution
 # ------------------------------
-if [ ! -d "/opt/ros/humble" ]; then
-  echo "[ERROR] ROS 2 Humble is not installed."
-  echo "Install ROS 2 Humble before running this script."
-  echo "https://docs.ros.org/en/humble/Installation.html"
+ROS_DISTRO=""
+
+if [ -d "/opt/ros/humble" ]; then
+  ROS_DISTRO="humble"
+elif [ -d "/opt/ros/jazzy" ]; then
+  ROS_DISTRO="jazzy"
+else
+  echo "[ERROR] No supported ROS 2 distribution found."
+  echo "Install ROS 2 Humble or Jazzy before running this script."
   exit 1
 fi
 
-echo "[OK] Ubuntu 22.04 detected"
-echo "[OK] ROS 2 Humble detected"
+echo "[OK] ROS 2 $ROS_DISTRO detected"
 
 # ------------------------------
 # 3. Update system
@@ -40,7 +49,7 @@ echo "[INFO] Updating system packages..."
 sudo apt update
 
 # ------------------------------
-# 4. Install system dependencies
+# 4. Install base system dependencies
 # ------------------------------
 echo "[INFO] Installing system dependencies..."
 
@@ -56,7 +65,7 @@ sudo apt install -y \
 # ------------------------------
 # 5. Install kernel modules (USB-RS485 / CH340)
 # ------------------------------
-echo "[INFO] Installing kernel extra modules (CH340 support)..."
+echo "[INFO] Installing kernel extra modules (CH340 / RS485 support)..."
 
 sudo apt install -y linux-modules-extra-$(uname -r)
 
@@ -74,7 +83,7 @@ fi
 echo "[INFO] Installing Python dependencies..."
 
 pip3 install --upgrade pip
-pip3 install pyserial
+pip3 install pyserial flask
 
 # ------------------------------
 # 8. ROS dependency initialization
@@ -87,14 +96,21 @@ fi
 rosdep update
 
 # ------------------------------
-# 9. udev rule for WT901C (optional but recommended)
+# 9. Install IMU tools for RViz2
+# ------------------------------
+echo "[INFO] Installing IMU tools for RViz2..."
+
+sudo apt install -y ros-${ROS_DISTRO}-imu-tools
+
+# ------------------------------
+# 10. udev rule for WT901C (persistent port)
 # ------------------------------
 UDEV_RULE_FILE="/etc/udev/rules.d/99-wt901c.rules"
 
 if [ ! -f "$UDEV_RULE_FILE" ]; then
   echo "[INFO] Installing udev rule for WT901C IMU..."
 
-  sudo tee $UDEV_RULE_FILE > /dev/null <<EOF
+  sudo tee "$UDEV_RULE_FILE" > /dev/null <<EOF
 SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", SYMLINK+="wt901c"
 EOF
 
@@ -105,31 +121,16 @@ else
 fi
 
 # ------------------------------
-# 10. Permissions
+# 11. Permissions
 # ------------------------------
 echo "[INFO] Adding user to dialout group..."
 
-sudo usermod -a -G dialout $USER
+sudo usermod -a -G dialout "$USER"
 
 # ------------------------------
-# 11. Final message
+# 12. Final message
 # ------------------------------
 echo ""
 echo "=============================================="
 echo " Installation complete"
-echo "=============================================="
-echo ""
-echo "IMPORTANT:"
-echo "1. Reboot your system:"
-echo "   sudo reboot"
-echo ""
-echo "2. After reboot:"
-echo "   source /opt/ros/humble/setup.bash"
-echo ""
-echo "3. Build your workspace:"
-echo "   colcon build"
-echo ""
-echo "4. Run the driver:"
-echo "   ros2 run wt901c_imu wt901c_node"
-echo ""
 echo "=============================================="
