@@ -1,14 +1,19 @@
 # WT901C485 ROS 2 Driver (RS-485 Modbus IMU)
 
-This repository contains a **ROS 2 package for setting up and using the WT901C485 RS-485 IMU in Modbus mode**.
+This repository provides a **ROS 2 driver for the WT901C485 RS-485 IMU operating in Modbus RTU mode**.
 
-The package provides **plug-and-play ROS 2 nodes** that poll the WT901C485 IMU over **RS-485 (Modbus RTU)** and publish **standard ROS sensor messages**, making it suitable for:
+The package offers **plug-and-play ROS 2 nodes** that communicate with the WT901C485 over **RS-485 (Modbus RTU)** and publish **standard ROS sensor messages**, making it suitable for:
 
-- robot_localization
+- `robot_localization`
 - Nav2
-- General mobile robotics, mapping, and localization applications
+- Mobile robots
+- Mapping, localization, and sensor fusion pipelines
 
-This driver follows the **industrial-correct Modbus polling model** required by the WT901C485 (no UART streaming).
+This driver follows the **industrial-correct Modbus polling model** required by the WT901C485.
+
+⚠️ **Important**  
+The WT901C485 **does NOT support UART streaming**.  
+All data must be acquired using **Modbus RTU polling**.
 
 ---
 
@@ -17,17 +22,17 @@ This driver follows the **industrial-correct Modbus polling model** required by 
 ### Required Hardware
 - WT901C485 IMU (RS-485 variant)
 - USB → RS-485 converter  
-  (CH340 / FTDI based, auto-direction recommended)
+  (CH340 / FTDI based, **auto-direction control recommended**)
 - External **5V power supply** for the IMU
 
 ### Wiring
 
 | WT901C485 | RS-485 Adapter |
-|----------|---------------|
-| A / A+ | A / A+ |
-| B / B- | B / B- |
-| GND | GND |
-| VCC | External 5V |
+|----------|----------------|
+| A / A+   | A / A+         |
+| B / B−   | B / B−         |
+| GND      | GND            |
+| VCC      | External 5V    |
 
 ⚠️ **Do NOT power the IMU from TTL VCC pins on the converter**  
 ⚠️ **Do NOT use UART / TTL mode — this IMU works only in RS-485 Modbus mode**
@@ -36,15 +41,17 @@ This driver follows the **industrial-correct Modbus polling model** required by 
 
 ## 🖥️ Software Requirements
 
-- Ubuntu 22.04 or Ubuntu 24
-- ROS 2 Humble or Jazzy
+- Ubuntu 22.04 or Ubuntu 24.04
+- ROS 2 Humble or ROS 2 Jazzy
 - Python ≥ 3.10
-- pyserial
+- `pyserial`
 
+---
 
 ## 📦 Installation & Setup
 
-### Clone and install the package
+### Clone and Install
+
 ```bash
 cd ~/ros2_ws/src
 git clone https://github.com/Smokey8979/wt901c_ros2.git
@@ -54,13 +61,13 @@ chmod +x install.sh
 sudo reboot
 ```
 
-### What the install script does
-- Installs required system packages
-- Installs USB–RS485 kernel modules (CH340 support)
-- Removes conflicting services (brltty)
+### What the Install Script Does
+- Installs required system dependencies
+- Enables USB–RS485 kernel modules (CH340 support)
+- Removes conflicting services (`brltty`)
 - Adds udev rules for stable device naming
-- Adds the user to the dialout group
-- Installs imu plugin for rviz2
+- Adds the user to the `dialout` group
+- Installs the IMU plugin for `rviz2`
 
 ---
 
@@ -76,11 +83,16 @@ source install/setup.bash
 
 ## 🚀 Running the Nodes
 
-> ⚠️ **IMPORTANT NOTE**  
-> Temperature readings are currently **Available** but Atlitude readings are currently **Inaccurate**.
+> ⚠️ **Important Notes**
+>
+> - Temperature data is **available**
+> - Altitude data is **currently inaccurate** (derived from pressure)
+> - Altitude improvements are planned in future releases
 
-### 1️⃣ Basic IMU Only
-(Accelerometer + Gyroscope + Orientation)
+---
+
+### 1️⃣ Basic IMU  
+**Accelerometer + Gyroscope + Orientation**
 
 ```bash
 ros2 run wt901c_imu wit_basic_imu_node \
@@ -92,7 +104,6 @@ ros2 run wt901c_imu wit_basic_imu_node \
 ---
 
 ### 2️⃣ IMU + Magnetometer
-(Temperature placeholder – not working yet)
 
 ```bash
 ros2 run wt901c_imu wit_imu_node_mag \
@@ -102,10 +113,12 @@ ros2 run wt901c_imu wit_imu_node_mag \
   -p rate:=20.0
 ```
 
+Temperature is currently a placeholder in this node.
+
 ---
 
-### 3️⃣ Test IMU
-(IMU + Magnetometer + Barometer)
+### 3️⃣ Test / Diagnostic Node  
+**IMU + Magnetometer + Barometer**
 
 ```bash
 ros2 run wt901c_imu test_imu_node \
@@ -116,83 +129,107 @@ ros2 run wt901c_imu test_imu_node \
   -p baro_reg:=63
 ```
 
+Alternative:
+
+```bash
+ros2 run wt901c_imu wit_imu_node
+```
+
 ---
 
-### 4️⃣ Full IMU
-(All)
-> ⚠️ **IMPORTANT NOTE**  
-> Altitude Readings are not accurate as they are derived from the pressure, future improvements will be done.
+### 4️⃣ Full IMU (Robot Deployment & Calibration)
 
+This node is intended for **real-robot integration** and supports **on-device IMU calibration**.
+
+> ⚠️ **Important Notes**
+>
+> - Altitude is derived from pressure and is currently inaccurate
+> - Allow the IMU to complete calibration after startup
+> - Gravity compensation can be optionally disabled
+> - Recommended for EKF / real-world navigation setups
 
 ```bash
-ros2 run wt901c_imu wit_imu_node 
+ros2 run wt901c_imu wit_imu_with_cal_node
 ```
-## Checking
+
+---
+
+## 🔍 Verification & Visualization
+
+### Check Topics
 ```bash
-ros2 topic list 
+ros2 topic list
 ```
-In another terminal set frame to imu_link then add the topics and all to visualize.
-```bash 
+
+### Visualize in RViz2
+```bash
 rviz2
 ```
 
+Set the fixed frame to `imu_link` and add IMU-related topics.
 
 ---
 
-## Debug
+## 🧪 Debug & Diagnostics
 
-### Scan the registors via connecting the imu 
-> ⚠️ **IMPORTANT NOTE**  
-> This is for debugging if you dont get data on the topics, then try to check the registors and then change in the code accordingly.
+### Scan IMU Registers (Low-Level Debug)
+
+Use this only if IMU data is not publishing correctly.
+
 ```bash
 cd ~/ros2_ws/src/wt901c_ros2/
 chmod +x check_reg.py
-python3 check_reg.py 
+python3 check_reg.py
 ```
 
+### Official Register Documentation
+
+WT901C485 register map and functions:  
+https://images-na.ssl-images-amazon.com/images/I/A1YLf4otHWL.pdf
+
+---
 
 ## 📡 Published Topics
 
 | Topic | Message Type | Description |
 |------|-------------|------------|
-| /imu/data | sensor_msgs/Imu | Accelerometer, Gyroscope, Orientation |
-| /imu/mag | sensor_msgs/MagneticField | Magnetometer (optional) |
-| /imu/temperature | sensor_msgs/Temperature | Temperature (optional) |
-| /imu/pressure | sensor_msgs/FluidPressure | Barometric pressure (optional) |
-| /imu/altitude | std_msgs/Float64 (derived from pressure) | Altitude (Currently Inaccurate) |
+| `/imu/data` | `sensor_msgs/Imu` | Acceleration, angular velocity, orientation |
+| `/imu/mag` | `sensor_msgs/MagneticField` | Magnetometer |
+| `/imu/temperature` | `sensor_msgs/Temperature` | Temperature |
+| `/imu/pressure` | `sensor_msgs/FluidPressure` | Barometric pressure |
+| `/imu/altitude` | `std_msgs/Float64` | Altitude (derived, inaccurate) |
 
 ---
 
 ## ✨ Features
 
-- RS-485 Modbus RTU polling (industrial-grade & reliable)
-- Accelerometer
-- Gyroscope
+- Industrial-grade RS-485 Modbus RTU polling
+- Accelerometer, gyroscope, magnetometer support
 - Orientation (Euler → Quaternion)
-- Magnetometer
-- Barometer / Pressure
-- ROS-standard message types
+- Barometer / pressure data
+- ROS-standard message interfaces
 - Parameter-driven configuration
-- Compatible with robot_localization and Nav2
-- Works on any ROS 2 Humble/Jazzy system
-- Can further integrate it with EKF along with other datas for better odom or position
+- Compatible with `robot_localization` and Nav2
+- Works on ROS 2 Humble and Jazzy
+- Designed for real-robot deployment
+- Supports EKF fusion with wheel odometry and other sensors
 
 ---
 
 ## 📌 Important Notes
 
-- WT901C485 does NOT support continuous UART streaming
-- This driver correctly uses poll-based Modbus communication
-- Register addresses may vary by firmware
-- USB–RS485 adapters must support automatic TX/RX direction control
+- WT901C485 does not support UART streaming
+- Modbus polling is mandatory
+- Register addresses may vary by firmware version
+- USB–RS485 adapters must support automatic TX/RX direction switching
 
 ---
 
 ## 🆘 Support
 
-For help, questions, or issues:
+For questions, issues, or contributions:
 
-sdhudu@gmail.com
+📧 **sdhudu@gmail.com**
 
 ---
 

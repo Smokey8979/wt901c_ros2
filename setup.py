@@ -28,6 +28,7 @@ setup(
 	        'wit_basic_imu_node = wt901c_imu.basic_imu_node:main',
             'test_imu_node = wt901c_imu.full_imu_node:main',
             'wit_imu_node = wt901c_imu.wit_full:main',
+            'wit_imu_with_cal_node = wt901c_imu.imu_with_cal:main',
         ],
     },
 )
